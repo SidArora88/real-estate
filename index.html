@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Compare multiple real estate payment plans side-by-side. Calculate Construction-Linked, Possession-Linked, and Flexi payment schedules instantly.">
+  <meta name="keywords" content="real estate, payment calculator, construction linked plan, possession linked plan, property payment">
+
+  <!-- Open Graph for social sharing -->
+  <meta property="og:title" content="Real Estate Payment Plan Calculator">
+  <meta property="og:description" content="Compare multiple payment plans for your property investment">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://sidarora88.github.io/real-estate/">
+
+  <title>Real Estate Payment Plan Calculator</title>
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-container">
+        <h1>Real Estate Payment Calculator</h1>
+        <p class="tagline">Compare Multiple Payment Plans Instantly</p>
+      </div>
+    </header>
+
+    <!-- Main Calculator Section -->
+    <main class="main-content">
+      <!-- Input Section -->
+      <section class="input-section" aria-label="Calculator inputs">
+        <div class="card">
+          <h2>Property Details</h2>
+
+          <div class="form-group">
+            <label for="propertyPrice">Property Price (₹) <span class="required">*</span></label>
+            <input
+              type="text"
+              id="propertyPrice"
+              name="propertyPrice"
+              placeholder="e.g., 1,00,00,000"
+              aria-required="true"
+              aria-describedby="priceHelp priceError"
+            >
+            <small id="priceHelp" class="help-text">Enter the total property price in rupees</small>
+            <div id="priceError" class="error-message" role="alert" aria-live="polite"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Select Payment Plans to Compare (Select 1-3)</label>
+            <div class="plan-selection" role="group" aria-label="Payment plan selection">
+              <div class="plan-option">
+                <input type="checkbox" id="plan-CLP" name="plan" value="CLP">
+                <label for="plan-CLP">
+                  <strong>Construction-Linked Plan (CLP)</strong>
+                  <span class="plan-desc">Payments tied to construction milestones</span>
+                </label>
+              </div>
+
+              <div class="plan-option">
+                <input type="checkbox" id="plan-20-80" name="plan" value="20:80">
+                <label for="plan-20-80">
+                  <strong>20:80 Possession-Linked</strong>
+                  <span class="plan-desc">20% upfront, 80% on possession</span>
+                </label>
+              </div>
+
+              <div class="plan-option">
+                <input type="checkbox" id="plan-10-90" name="plan" value="10:90">
+                <label for="plan-10-90">
+                  <strong>10:90 Possession-Linked</strong>
+                  <span class="plan-desc">10% upfront, 90% on possession</span>
+                </label>
+              </div>
+
+              <div class="plan-option">
+                <input type="checkbox" id="plan-down" name="plan" value="DownPayment">
+                <label for="plan-down">
+                  <strong>Down Payment Plan</strong>
+                  <span class="plan-desc">Large upfront payment with discount</span>
+                </label>
+              </div>
+
+              <div class="plan-option">
+                <input type="checkbox" id="plan-flexi-30-70" name="plan" value="Flexi-30:70">
+                <label for="plan-flexi-30-70">
+                  <strong>Flexi 30:70 Plan</strong>
+                  <span class="plan-desc">30% early, 70% on possession</span>
+                </label>
+              </div>
+
+              <div class="plan-option">
+                <input type="checkbox" id="plan-flexi-50-50" name="plan" value="Flexi-50:50">
+                <label for="plan-flexi-50-50">
+                  <strong>Flexi 50:50 Plan</strong>
+                  <span class="plan-desc">50% early, 50% on possession</span>
+                </label>
+              </div>
+
+              <div class="plan-option">
+                <input type="checkbox" id="plan-time" name="plan" value="TimeLinked">
+                <label for="plan-time">
+                  <strong>Time-Linked Plan</strong>
+                  <span class="plan-desc">Fixed payments at regular intervals</span>
+                </label>
+              </div>
+            </div>
+            <div id="planError" class="error-message" role="alert" aria-live="polite"></div>
+          </div>
+
+          <button id="calculateBtn" class="btn btn-primary" aria-label="Calculate payment schedules">
+            Calculate Payment Schedules
+          </button>
+        </div>
+      </section>
+
+      <!-- Results Section -->
+      <section id="resultsSection" class="results-section hidden" aria-label="Calculation results">
+        <div class="results-header">
+          <h2>Payment Schedule Comparison</h2>
+          <div class="action-buttons">
+            <button id="shareBtn" class="btn btn-secondary" aria-label="Share results">
+              <span class="icon">🔗</span> Share
+            </button>
+            <button id="downloadPdfBtn" class="btn btn-primary" aria-label="Download PDF">
+              <span class="icon">📄</span> Download PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Comparison Summary -->
+        <div id="comparisonSummary" class="comparison-summary"></div>
+
+        <!-- Payment Schedules -->
+        <div id="scheduleContainer" class="schedule-container"></div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+          <p><strong>Disclaimer:</strong> This is an estimate based on standard payment plan structures.
+          Actual payment schedules may vary by developer and project. Please consult with the sales team
+          for exact payment terms.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>&copy; 2025 Real Estate Payment Calculator. All rights reserved.</p>
+      <p class="footer-note">💡 Tip: Use this tool to compare different payment options before making your investment decision.</p>
+    </footer>
+  </div>
+
+  <!-- Share Modal -->
+  <div id="shareModal" class="modal hidden" role="dialog" aria-labelledby="shareModalTitle" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="shareModalTitle">Share Results</h3>
+        <button class="modal-close" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Copy this link to share your results:</p>
+        <div class="share-link-container">
+          <input type="text" id="shareLink" readonly aria-label="Shareable link">
+          <button id="copyLinkBtn" class="btn btn-secondary">Copy</button>
+        </div>
+        <div id="copySuccess" class="success-message hidden">Link copied to clipboard!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/plans.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/urlHandler.js"></script>
+  <script src="js/pdfGenerator.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- jsPDF from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</body>
+</html>

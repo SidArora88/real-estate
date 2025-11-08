@@ -1,0 +1,38 @@
+{
+  "name": "real-estate-payment-calculator",
+  "version": "1.0.0",
+  "description": "Multi-plan payment calculator for real estate with automated validation",
+  "main": "index.html",
+  "scripts": {
+    "test": "jest --verbose",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "validate": "node validation/validate-all.js",
+    "validate:plans": "node validation/validate-plans.js",
+    "validate:calculations": "node validation/validate-calculations.js",
+    "validate:ui": "node validation/validate-ui.js",
+    "validate:pdf": "node validation/validate-pdf.js",
+    "lint": "eslint .",
+    "prepare": "husky install",
+    "serve": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "real-estate",
+    "payment-calculator",
+    "construction-linked-plan",
+    "possession-linked-plan"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.11",
+    "eslint": "^8.56.0",
+    "husky": "^8.0.3",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  },
+  "dependencies": {
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2"
+  }
+}

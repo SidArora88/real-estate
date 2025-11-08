@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Function Test</title>
+</head>
+<body>
+  <h1>Function Availability Test</h1>
+  <div id="results"></div>
+
+  <script src="js/calculator.js"></script>
+  <script src="js/flexibleCalculator.js"></script>
+  <script>
+    window.addEventListener('load', function() {
+      const results = document.getElementById('results');
+
+      const tests = [
+        { name: 'formatCurrency', fn: typeof formatCurrency },
+        { name: 'formatIndianNumber', fn: typeof formatIndianNumber },
+        { name: 'createBlankInstallment', fn: typeof createBlankInstallment },
+        { name: 'createBlankDiscount', fn: typeof createBlankDiscount },
+        { name: 'validateConfiguration', fn: typeof validateConfiguration },
+        { name: 'calculateWithUserConfig', fn: typeof calculateWithUserConfig }
+      ];
+
+      let html = '<ul>';
+      tests.forEach(test => {
+        const status = test.fn === 'function' ? '✅' : '❌';
+        html += `<li>${status} ${test.name}: ${test.fn}</li>`;
+      });
+      html += '</ul>';
+
+      results.innerHTML = html;
+
+      console.log('Test results:', tests);
+
+      // Try to call a function
+      try {
+        const testInst = createBlankInstallment();
+        console.log('Created blank installment:', testInst);
+        results.innerHTML += '<p>✅ Successfully created blank installment!</p>';
+      } catch (e) {
+        console.error('Error:', e);
+        results.innerHTML += '<p>❌ Error: ' + e.message + '</p>';
+      }
+    });
+  </script>
+</body>
+</html>

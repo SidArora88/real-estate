@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug Advanced Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .debug-panel {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 2px solid #333;
+      border-radius: 8px;
+    }
+    .error { color: red; }
+    .success { color: green; }
+    .info { color: blue; }
+  </style>
+</head>
+<body>
+  <h1>Advanced Calculator Debug Panel</h1>
+
+  <div class="debug-panel">
+    <h2>Function Availability Check</h2>
+    <div id="functionCheck"></div>
+  </div>
+
+  <div class="debug-panel">
+    <h2>DOM Elements Check</h2>
+    <div id="domCheck"></div>
+  </div>
+
+  <div class="debug-panel">
+    <h2>Console Errors</h2>
+    <div id="consoleErrors">
+      <p class="info">Check browser console for detailed errors</p>
+    </div>
+  </div>
+
+  <div class="debug-panel">
+    <h2>Test advanced.html</h2>
+    <iframe src="advanced.html" style="width: 100%; height: 600px; border: 2px solid #ccc;"></iframe>
+  </div>
+
+  <script src="js/calculator.js"></script>
+  <script src="js/flexibleCalculator.js"></script>
+  <script>
+    // Override console.error to capture errors
+    const originalError = console.error;
+    const errors = [];
+    console.error = function(...args) {
+      errors.push(args.join(' '));
+      originalError.apply(console, args);
+    };
+
+    window.addEventListener('load', function() {
+      // Check functions
+      const funcCheck = document.getElementById('functionCheck');
+      const functions = [
+        'formatCurrency',
+        'formatIndianNumber',
+        'calculatePaymentSchedule',
+        'createBlankInstallment',
+        'createBlankDiscount',
+        'validateConfiguration',
+        'calculateWithUserConfig'
+      ];
+
+      let funcHTML = '<ul>';
+      functions.forEach(funcName => {
+        const exists = typeof window[funcName] === 'function';
+        const status = exists ? '<span class="success">✅ Available</span>' : '<span class="error">❌ Missing</span>';
+        funcHTML += `<li><strong>${funcName}</strong>: ${status} (type: ${typeof window[funcName]})</li>`;
+      });
+      funcHTML += '</ul>';
+      funcCheck.innerHTML = funcHTML;
+
+      // Test function execution
+      try {
+        const testInst = createBlankInstallment();
+        funcHTML += `<p class="success">✅ Successfully executed createBlankInstallment()</p>`;
+        funcHTML += `<pre>${JSON.stringify(testInst, null, 2)}</pre>`;
+        funcCheck.innerHTML = funcHTML;
+      } catch (e) {
+        funcHTML += `<p class="error">❌ Error executing createBlankInstallment(): ${e.message}</p>`;
+        funcCheck.innerHTML = funcHTML;
+      }
+
+      // Show any captured errors
+      if (errors.length > 0) {
+        const errorDiv = document.getElementById('consoleErrors');
+        errorDiv.innerHTML = '<p class="error">Errors detected:</p><ul>';
+        errors.forEach(err => {
+          errorDiv.innerHTML += `<li class="error">${err}</li>`;
+        });
+        errorDiv.innerHTML += '</ul>';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit validations..."
+echo ""
+
+# Run automated validations
+npm run validate
+
+# Check exit code
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Pre-commit validation failed!"
+  echo "Please fix the errors above before committing."
+  exit 1
+fi
+
+# Run tests
+echo ""
+echo "🧪 Running tests..."
+npm test
+
+# Check exit code
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Tests failed!"
+  echo "Please fix the failing tests before committing."
+  exit 1
+fi
+
+echo ""
+echo "✅ All pre-commit checks passed!"
+echo ""
+
+exit 0

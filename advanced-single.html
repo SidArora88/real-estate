@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Real Estate Calculator - Single Page</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Modern Contemporary Design */
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background-attachment: fixed;
+    }
+
+    .container {
+      max-width: 1200px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      margin: 20px auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .main-content {
+      padding: 40px;
+    }
+
+    /* Section Cards - Modern Glass Effect */
+    .section-card {
+      background: white;
+      padding: 40px;
+      margin-bottom: 40px;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .section-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 6px;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .section-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 35px;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .section-number {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.5rem;
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+    }
+
+    .section-title {
+      flex: 1;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .section-title p {
+      margin: 8px 0 0 0;
+      color: #64748b;
+      font-size: 1rem;
+      font-weight: 400;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    /* Modern Input Fields */
+    .form-group input,
+    .form-group select {
+      font-size: 1.05rem;
+      padding: 14px 18px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .form-group label {
+      font-weight: 600;
+      color: #334155;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+
+    .calculated-field {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      padding: 20px 24px;
+      border-radius: 16px;
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 2px solid #bae6fd;
+      transition: all 0.3s ease;
+    }
+
+    .calculated-field:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+
+    .calculated-field.highlight {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    }
+
+    .calculated-field.highlight strong {
+      color: white;
+    }
+
+    .installment-item, .discount-item {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .installment-item:hover, .discount-item:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .item-number {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .remove-btn {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    .remove-btn:hover {
+      transform: scale(1.05) rotate(90deg);
+      box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+    }
+
+    .add-item-btn {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+      border: 2px dashed #667eea;
+      border-radius: 16px;
+      color: #667eea;
+      font-weight: 600;
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .add-item-btn:hover {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-style: solid;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    }
+
+    .validation-status {
+      padding: 15px;
+      border-radius: var(--border-radius);
+      margin-bottom: 20px;
+    }
+
+    .validation-status.valid {
+      background: #f0fdf4;
+      border-left: 4px solid var(--success-color);
+      color: #166534;
+    }
+
+    .validation-status.invalid {
+      background: #fef2f2;
+      border-left: 4px solid var(--error-color);
+      color: #991b1b;
+    }
+
+    .validation-status.warning {
+      background: #fffbeb;
+      border-left: 4px solid var(--warning-color);
+      color: #92400e;
+    }
+
+    .percentage-indicator {
+      font-size: 1.2rem;
+      font-weight: bold;
+      padding: 10px 15px;
+      border-radius: var(--border-radius);
+      display: inline-block;
+    }
+
+    .percentage-indicator.valid {
+      background: #f0fdf4;
+      color: var(--success-color);
+    }
+
+    .percentage-indicator.invalid {
+      background: #fef2f2;
+      color: var(--error-color);
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .checkbox-group label {
+      margin: 0;
+      cursor: pointer;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border-color);
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      transition: var(--transition);
+      background: white;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .sticky-calculate {
+      position: sticky;
+      bottom: 0;
+      background: white;
+      padding: 24px;
+      box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
+      z-index: 10;
+      margin: 0 -40px -40px -40px;
+      border-radius: 0 0 24px 24px;
+    }
+
+    #calculateBtn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-transform: none;
+    }
+
+    #calculateBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(102, 126, 234, 0.5);
+    }
+
+    #calculateBtn:active {
+      transform: translateY(0);
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .result-card {
+      background: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-md);
+    }
+
+    .result-card h4 {
+      margin-bottom: 15px;
+      color: var(--text-primary);
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 10px;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .result-row:last-child {
+      border-bottom: none;
+      font-weight: bold;
+      font-size: 1.1rem;
+      padding-top: 12px;
+      border-top: 2px solid var(--border-color);
+    }
+
+    .result-label {
+      color: var(--text-secondary);
+    }
+
+    .result-value {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .grand-total-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 48px;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .grand-total-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+
+    .grand-total-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 16px;
+      opacity: 0.95;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .grand-total-card .amount {
+      font-size: 3.5rem;
+      font-weight: 800;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      position: relative;
+      z-index: 1;
+    }
+
+    .installment-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .installment-table th,
+    .installment-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .installment-table th {
+      background: var(--bg-color);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .installment-table tr:hover {
+      background: var(--bg-color);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>Advanced Financial Calculator</h1>
+      <p class="tagline">Single Page View - All Configuration in One Place</p>
+      <nav style="margin-top: 15px;">
+        <a href="advanced.html" style="color: white; text-decoration: underline; margin-right: 15px;">← Tabbed Version</a>
+        <a href="index.html" style="color: white; text-decoration: underline;">Simple Calculator</a>
+      </nav>
+    </header>
+
+    <main class="main-content">
+      <!-- Section 1: Basic Details -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-number">1</div>
+          <div class="section-title">
+            <h2>Property Information</h2>
+            <p>Enter basic property details</p>
+          </div>
+        </div>
+
+        <div class="input-grid">
+          <div class="form-group">
+            <label for="area">Property Area (sq ft) <span class="required">*</span></label>
+            <input type="number" id="area" placeholder="2400" min="1" step="1">
+            <small class="help-text">Built-up area</small>
+          </div>
+
+          <div class="form-group">
+            <label for="pricePerSqFt">Base Price per sq ft (₹) <span class="required">*</span></label>
+            <input type="number" id="pricePerSqFt" placeholder="15000" min="1000" step="100">
+            <small class="help-text">Builder's quoted price</small>
+          </div>
+        </div>
+
+        <div id="bspCalculation" style="background: #f0f9ff; padding: 12px; border-radius: 4px; margin-top: 10px; display: none; border-left: 3px solid #2563eb;">
+          <strong>💡 Calculation:</strong>
+          <div id="bspFormula" style="margin-top: 5px; font-family: monospace; color: #1e293b;"></div>
+        </div>
+
+        <div class="calculated-field highlight">
+          <strong>Basic Selling Price (BSP):</strong>
+          <span id="bspDisplay" style="font-size: 1.3rem; font-weight: bold; color: var(--primary-color);">₹0</span>
+        </div>
+      </section>
+
+      <!-- Section 2: Discounts -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-number">2</div>
+          <div class="section-title">
+            <h2>Discounts & Offers</h2>
+            <p>Add all applicable discounts</p>
+          </div>
+        </div>
+
+        <div id="discountsList"></div>
+
+        <button class="add-item-btn" id="addDiscountBtn">
+          + Add Discount
+        </button>
+
+        <div class="calculated-field">
+          <strong>Total Discount Amount:</strong>
+          <span id="totalDiscountDisplay" style="font-weight: bold; color: var(--success-color);">₹0</span>
+        </div>
+
+        <div id="tcvCalculation" style="background: #f0f9ff; padding: 12px; border-radius: 4px; margin-top: 10px; display: none; border-left: 3px solid #2563eb;">
+          <strong>💡 TCV Calculation:</strong>
+          <div id="tcvFormula" style="margin-top: 5px; font-family: monospace; color: #1e293b;"></div>
+        </div>
+
+        <div class="calculated-field highlight">
+          <strong>Total Cost Value (TCV) after discounts:</strong>
+          <span id="tcvDisplay" style="font-size: 1.3rem; font-weight: bold; color: var(--primary-color);">₹0</span>
+        </div>
+      </section>
+
+      <!-- Section 3: Installments -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-number">3</div>
+          <div class="section-title">
+            <h2>Payment Installments</h2>
+            <p>Configure your payment schedule (must total 100%)</p>
+          </div>
+        </div>
+
+        <div id="validationStatus" class="validation-status" style="display: none;"></div>
+
+        <div style="text-align: center; margin-bottom: 20px;">
+          <span class="percentage-indicator" id="totalPercentDisplay">Total: 0%</span>
+        </div>
+
+        <div id="installmentsList"></div>
+
+        <button class="add-item-btn" id="addInstallmentBtn">
+          + Add Installment
+        </button>
+      </section>
+
+      <!-- Section 4: Rates & Charges -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-number">4</div>
+          <div class="section-title">
+            <h2>Rates & Additional Charges</h2>
+            <p>Configure GST, Registry, Interest, and Possession charges</p>
+          </div>
+        </div>
+
+        <div class="input-grid">
+          <div class="form-group">
+            <label for="gstRate">GST Rate (%)</label>
+            <input type="number" id="gstRate" value="5" min="0" max="50" step="0.1">
+            <small class="help-text">Typically 5% for under-construction</small>
+          </div>
+
+          <div class="form-group">
+            <label for="registryRate">Registry Rate (%)</label>
+            <input type="number" id="registryRate" value="7" min="0" max="20" step="0.1">
+            <small class="help-text">Varies by state (typically 5-10%)</small>
+          </div>
+
+          <div class="form-group">
+            <label for="interestRate">Interest Rate (% per annum)</label>
+            <input type="number" id="interestRate" value="10" min="0" max="30" step="0.1">
+            <small class="help-text">Builder's interest on delayed payments</small>
+          </div>
+
+          <div class="form-group">
+            <label for="possessionCharge">Possession Charges (₹ per sq ft)</label>
+            <input type="number" id="possessionCharge" value="250" min="0" step="10">
+            <small class="help-text">One-time charges at possession</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sticky Calculate Button -->
+      <div class="sticky-calculate">
+        <button id="calculateBtn" class="btn btn-primary" style="width: 100%; padding: 18px; font-size: 1.2rem;">
+          🧮 Calculate Complete Financial Breakdown
+        </button>
+      </div>
+
+      <!-- Results Section -->
+      <section id="resultsSection" class="results-section hidden" style="margin-top: 30px;">
+        <div class="results-header">
+          <h2>Complete Financial Breakdown</h2>
+          <div class="action-buttons">
+            <button id="shareBtn" class="btn btn-secondary">🔗 Share</button>
+            <button id="downloadPdfBtn" class="btn btn-primary">📄 Download PDF</button>
+          </div>
+        </div>
+
+        <!-- Grand Total -->
+        <div class="grand-total-card">
+          <h3>Grand Total (All Inclusive)</h3>
+          <div class="amount" id="grandTotal">₹0</div>
+          <p style="margin-top: 10px; opacity: 0.9;">Effective Cost: <span id="effectiveCostPerSqFt">₹0</span>/sq ft</p>
+        </div>
+
+        <!-- Summary Grid -->
+        <div id="summaryGrid" class="results-grid"></div>
+
+        <!-- Detailed Breakdown -->
+        <div id="detailedBreakdown"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>&copy; 2025 Advanced Real Estate Calculator</p>
+      <p class="footer-note">💡 All calculations are estimates. Verify with builder for exact terms.</p>
+    </footer>
+  </div>
+
+  <!-- Share Modal -->
+  <div id="shareModal" class="modal hidden" role="dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Share Configuration</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Copy this link to share your complete configuration:</p>
+        <div class="share-link-container">
+          <input type="text" id="shareLink" readonly>
+          <button id="copyLinkBtn" class="btn btn-secondary">Copy</button>
+        </div>
+        <div id="copySuccess" class="success-message hidden">Link copied!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/calculator.js"></script>
+  <script src="js/flexibleCalculator.js"></script>
+  <script src="js/advancedUI.js"></script>
+
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</body>
+</html>

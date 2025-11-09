@@ -587,6 +587,12 @@
             <input type="number" id="possessionCharge" value="250" min="0" step="10">
             <small class="help-text">One-time charges at possession</small>
           </div>
+
+          <div class="form-group">
+            <label for="costOfMoney">Cost of Money (% per annum)</label>
+            <input type="number" id="costOfMoney" value="8" min="0" max="30" step="0.1">
+            <small class="help-text">Opportunity cost / discount rate for NPV</small>
+          </div>
         </div>
       </section>
 
@@ -612,6 +618,14 @@
           <h3>Grand Total (All Inclusive)</h3>
           <div class="amount" id="grandTotal">₹0</div>
           <p style="margin-top: 10px; opacity: 0.9;">Effective Cost: <span id="effectiveCostPerSqFt">₹0</span>/sq ft</p>
+        </div>
+
+        <!-- NPV Card (shown only when Cost of Money is set) -->
+        <div id="npvCard" class="grand-total-card hidden" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); margin-top: 20px;">
+          <h3>Net Present Value (True Cost Today)</h3>
+          <div class="amount" id="npvDisplay">₹0</div>
+          <p style="margin-top: 10px; opacity: 0.9;">NPV per sq ft: <span id="npvPerSqFt">₹0</span>/sq ft</p>
+          <p style="margin-top: 5px; font-size: 0.9rem; opacity: 0.85;">💰 Savings from Deferral: <span id="savingsFromDeferral">₹0</span></p>
         </div>
 
         <!-- Summary Grid -->

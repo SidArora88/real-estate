@@ -308,6 +308,31 @@ function calculateWithUserConfig(params) {
   // Step 8: Grand Total (Net Payment + Registry + Possession)
   const grandTotal = totalNetPayment + registryAmount + possessionCharges;
 
+  // Step 9: Calculate NPV (Net Present Value) using Cost of Money
+  // NPV = Present Value of all future payments using discount rate
+  let totalNPV = 0;
+  const discountRate = (config.rates.costOfMoney || 0) / 100;
+
+  // Calculate PV for each installment
+  installmentDetails.forEach(inst => {
+    // PV = FutureValue / (1 + r)^(months/12)
+    const years = inst.monthsFromBooking / 12;
+    const presentValue = inst.netPayment / Math.pow(1 + discountRate, years);
+    inst.presentValue = Math.round(presentValue);
+    totalNPV += presentValue;
+  });
+
+  // Assume Registry and Possession are paid at last installment
+  const lastInstallmentMonths = installmentDetails.length > 0
+    ? installmentDetails[installmentDetails.length - 1].monthsFromBooking
+    : 0;
+  const yearsForAdditionalCharges = lastInstallmentMonths / 12;
+
+  const registryPV = registryAmount / Math.pow(1 + discountRate, yearsForAdditionalCharges);
+  const possessionPV = possessionCharges / Math.pow(1 + discountRate, yearsForAdditionalCharges);
+
+  totalNPV += registryPV + possessionPV;
+
   // Compile summary
   results.breakdown.summary = {
     totalBaseAmount: Math.round(totalBaseAmount),
@@ -322,7 +347,14 @@ function calculateWithUserConfig(params) {
     possessionCharges,
     grandTotal: Math.round(grandTotal),
     effectiveCostPerSqFt: Math.round(grandTotal / area),
-    savingsFromInterest: Math.round(totalInterestSettled) // Buyer's savings
+    savingsFromInterest: Math.round(totalInterestSettled), // Buyer's savings from interest
+    // NPV fields
+    costOfMoneyRate: config.rates.costOfMoney || 0,
+    netPresentValue: Math.round(totalNPV),
+    npvPerSqFt: Math.round(totalNPV / area),
+    savingsFromDeferral: Math.round(grandTotal - totalNPV), // Benefit of paying over time
+    registryPV: Math.round(registryPV),
+    possessionPV: Math.round(possessionPV)
   };
 
   return results;

@@ -8,7 +8,8 @@ let currentConfig = {
   rates: {
     gst: 5,
     registry: 7,
-    interestPerAnnum: 10
+    interestPerAnnum: 10,
+    costOfMoney: 8 // Cost of money (opportunity cost) for NPV calculation
   },
   possessionChargePerSqFt: 250,
   installments: [],
@@ -72,6 +73,9 @@ function setupEventListeners() {
   document.getElementById('possessionCharge').addEventListener('input', (e) => {
     currentConfig.possessionChargePerSqFt = parseFloat(e.target.value) || 0;
   });
+  document.getElementById('costOfMoney').addEventListener('input', (e) => {
+    currentConfig.rates.costOfMoney = parseFloat(e.target.value) || 0;
+  });
 
   // Add buttons
   document.getElementById('addInstallmentBtn').addEventListener('click', addInstallment);
@@ -121,7 +125,7 @@ function removeInstallment(id) {
 }
 
 /**
- * Render installments list
+ * Render installments list - Compact table style
  */
 function renderInstallments() {
   const container = document.getElementById('installmentsList');
@@ -129,62 +133,56 @@ function renderInstallments() {
 
   currentConfig.installments.forEach((inst, index) => {
     const div = document.createElement('div');
-    div.className = 'installment-item';
+    div.className = 'item';
     div.innerHTML = `
-      <div class="item-header">
-        <div class="item-number">${index + 1}</div>
-        ${currentConfig.installments.length > 1 ?
-          `<button class="remove-btn" onclick="removeInstallment(${inst.id})">×</button>` :
-          ''}
-      </div>
-
-      <div class="input-grid">
+      <div class="item-num">${index + 1}</div>
+      <div class="item-fields">
         <div class="form-group">
-          <label>Installment Name *</label>
+          <label>Name</label>
           <input type="text" value="${inst.name}"
             onchange="updateInstallment(${inst.id}, 'name', this.value)"
             placeholder="e.g., Booking">
         </div>
-
         <div class="form-group">
-          <label>% of TCV *</label>
+          <label>% of TCV</label>
           <input type="number" value="${inst.percentOfTCV}" min="0" max="100" step="0.1"
             onchange="updateInstallment(${inst.id}, 'percentOfTCV', parseFloat(this.value) || 0)">
         </div>
-
         <div class="form-group">
           <label>Due At</label>
           <input type="text" value="${inst.dueAt}"
             onchange="updateInstallment(${inst.id}, 'dueAt', this.value)"
             placeholder="e.g., On Booking">
         </div>
-
         <div class="form-group">
           <label>Months from Booking</label>
           <input type="number" value="${inst.monthsFromBooking}" min="0" step="1"
             onchange="updateInstallment(${inst.id}, 'monthsFromBooking', parseInt(this.value) || 0)">
         </div>
-      </div>
-
-      <div class="input-grid">
         ${index < currentConfig.installments.length - 1 ? `
         <div class="form-group">
-          <label>Interest Rate for Next Period (% p.a.)</label>
+          <label>Interest (% p.a.)</label>
           <input type="number" value="${inst.interestRateForNextPeriod !== null ? inst.interestRateForNextPeriod : ''}"
             min="0" max="30" step="0.1"
-            placeholder="Leave empty for global rate"
+            placeholder="Global"
             onchange="updateInstallment(${inst.id}, 'interestRateForNextPeriod', this.value ? parseFloat(this.value) : null)">
-          <small class="help-text">Rate for period until next installment</small>
         </div>
         ` : ''}
+      </div>
+      ${currentConfig.installments.length > 1 ?
+        `<button class="remove-btn" onclick="removeInstallment(${inst.id})">×</button>` :
+        ''}
+    `;
 
+    // Add extras row for checkboxes
+    const extrasHTML = `
+      <div class="item-extras">
         <div class="checkbox-group">
           <input type="checkbox" id="settle-${inst.id}"
             ${inst.settleAccruedInterest ? 'checked' : ''}
             onchange="updateInstallment(${inst.id}, 'settleAccruedInterest', this.checked)">
-          <label for="settle-${inst.id}">Settle Accrued Interest</label>
+          <label for="settle-${inst.id}">Settle Interest</label>
         </div>
-
         <div class="checkbox-group">
           <input type="checkbox" id="gst-${inst.id}"
             ${inst.applyGST ? 'checked' : ''}
@@ -192,24 +190,9 @@ function renderInstallments() {
           <label for="gst-${inst.id}">Apply GST</label>
         </div>
       </div>
-
-      ${inst.settleAccruedInterest ? `
-      <div style="background: #f0fdf4; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 0.9rem; border-left: 3px solid #16a34a;">
-        ✅ <strong>Interest Settlement:</strong> All accrued interest from previous periods will be deducted from this payment
-      </div>
-      ` : `
-      <div style="background: #fffbeb; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 0.9rem;">
-        ℹ️ <strong>Interest Accrual:</strong> Interest accrues on <strong>cumulative amount paid up to and including this installment</strong> (₹${formatCurrency((inst.percentOfTCV / 100) * parseFloat(document.getElementById('tcvDisplay').textContent.replace(/[₹,]/g, '') || 0))}) during the period until the next installment.
-      </div>
-      `}
-
-      <div class="form-group" style="margin-top: 10px;">
-        <label>Notes (optional)</label>
-        <input type="text" value="${inst.notes || ''}"
-          onchange="updateInstallment(${inst.id}, 'notes', this.value)"
-          placeholder="Additional notes">
-      </div>
     `;
+    div.innerHTML += extrasHTML;
+
     container.appendChild(div);
   });
 
@@ -251,7 +234,7 @@ function removeDiscount(id) {
 }
 
 /**
- * Render discounts list
+ * Render discounts list - Compact style
  */
 function renderDiscounts() {
   const container = document.getElementById('discountsList');
@@ -264,61 +247,49 @@ function renderDiscounts() {
   currentConfig.discounts.forEach((disc, index) => {
     // Calculate this discount amount
     let discountAmount = 0;
-    let calculationText = '';
 
     if (bsp > 0 && disc.value > 0) {
       if (disc.type === 'percentage') {
         discountAmount = (disc.value / 100) * bsp;
-        calculationText = `${disc.value}% of ${formatCurrency(bsp)} = ${formatCurrency(discountAmount)}`;
       } else {
         discountAmount = disc.value;
-        calculationText = `Fixed amount = ${formatCurrency(discountAmount)}`;
       }
     }
 
     const div = document.createElement('div');
-    div.className = 'discount-item';
+    div.className = 'item';
     div.innerHTML = `
-      <div class="item-header">
-        <div class="item-number">${index + 1}</div>
-        <button class="remove-btn" onclick="removeDiscount(${disc.id})">×</button>
-      </div>
-
-      <div class="input-grid">
+      <div class="item-num">${index + 1}</div>
+      <div class="item-fields">
         <div class="form-group">
-          <label>Discount Name *</label>
+          <label>Name</label>
           <input type="text" value="${disc.name}"
             onchange="updateDiscount(${disc.id}, 'name', this.value)"
             placeholder="e.g., Razorpay Discount">
         </div>
-
         <div class="form-group">
           <label>Type</label>
           <select onchange="updateDiscount(${disc.id}, 'type', this.value)">
-            <option value="percentage" ${disc.type === 'percentage' ? 'selected' : ''}>Percentage (%)</option>
-            <option value="fixed" ${disc.type === 'fixed' ? 'selected' : ''}>Fixed Amount (₹)</option>
+            <option value="percentage" ${disc.type === 'percentage' ? 'selected' : ''}>% of BSP</option>
+            <option value="fixed" ${disc.type === 'fixed' ? 'selected' : ''}>Fixed ₹</option>
           </select>
         </div>
-
         <div class="form-group">
-          <label>Value ${disc.type === 'percentage' ? '(%)' : '(₹)'}</label>
+          <label>Value</label>
           <input type="number" value="${disc.value}" min="0" step="0.1"
-            onchange="updateDiscount(${disc.id}, 'value', parseFloat(this.value) || 0)">
+            onchange="updateDiscount(${disc.id}, 'value', parseFloat(this.value) || 0)"
+            placeholder="${disc.type === 'percentage' ? '%' : '₹'}">
         </div>
+        ${discountAmount > 0 ? `
+        <div class="form-group">
+          <label>Amount</label>
+          <div style="padding: 10px 12px; background: #f0f9ff; border-radius: 6px; color: #16a34a; font-weight: 600;">
+            ${formatCurrency(discountAmount)}
+          </div>
+        </div>
+        ` : ''}
       </div>
-
-      ${calculationText ? `
-      <div style="background: #f0f9ff; padding: 10px; border-radius: 4px; margin-top: 10px; border-left: 3px solid #2563eb;">
-        <strong>💰 Calculation:</strong> ${calculationText}
-      </div>
-      ` : ''}
-
-      <div class="form-group" style="margin-top: 10px;">
-        <label>Notes (optional)</label>
-        <input type="text" value="${disc.notes || ''}"
-          onchange="updateDiscount(${disc.id}, 'notes', this.value)"
-          placeholder="Additional notes">
-      </div>
+      <button class="remove-btn" onclick="removeDiscount(${disc.id})">×</button>
     `;
     container.appendChild(div);
   });
@@ -464,6 +435,7 @@ function calculate() {
   currentConfig.rates.gst = parseFloat(document.getElementById('gstRate').value) || 0;
   currentConfig.rates.registry = parseFloat(document.getElementById('registryRate').value) || 0;
   currentConfig.rates.interestPerAnnum = parseFloat(document.getElementById('interestRate').value) || 0;
+  currentConfig.rates.costOfMoney = parseFloat(document.getElementById('costOfMoney').value) || 0;
   currentConfig.possessionChargePerSqFt = parseFloat(document.getElementById('possessionCharge').value) || 0;
 
   // Calculate
@@ -480,16 +452,34 @@ function calculate() {
  * Display results
  */
 function displayResults() {
+  console.log('displayResults called', currentResults);
   if (!currentResults) return;
 
   const resultsSection = document.getElementById('resultsSection');
   resultsSection.classList.remove('hidden');
 
   const b = currentResults.breakdown;
+  console.log('breakdown:', b);
 
   // Grand total
   document.getElementById('grandTotal').textContent = formatCurrency(b.summary.grandTotal);
   document.getElementById('effectiveCostPerSqFt').textContent = formatCurrency(b.summary.effectiveCostPerSqFt);
+
+  // NPV display
+  if (b.summary.costOfMoneyRate && b.summary.costOfMoneyRate > 0) {
+    document.getElementById('npvDisplay').textContent = formatCurrency(b.summary.netPresentValue);
+    document.getElementById('npvPerSqFt').textContent = formatCurrency(b.summary.npvPerSqFt);
+    document.getElementById('savingsFromDeferral').textContent = formatCurrency(b.summary.savingsFromDeferral);
+    const npvCard = document.getElementById('npvCard');
+    if (npvCard) npvCard.classList.remove('hidden');
+    const npvSection = document.getElementById('npvSection');
+    if (npvSection) npvSection.style.display = 'block';
+  } else {
+    const npvCard = document.getElementById('npvCard');
+    if (npvCard) npvCard.classList.add('hidden');
+    const npvSection = document.getElementById('npvSection');
+    if (npvSection) npvSection.style.display = 'none';
+  }
 
   // Summary cards
   const summaryGrid = document.getElementById('summaryGrid');
@@ -559,7 +549,14 @@ function displayResults() {
   let detailedHTML = '<div class="result-card" style="grid-column: 1 / -1;">';
   detailedHTML += '<h4>Installment Schedule with Interest Accrual</h4>';
   detailedHTML += '<table class="installment-table" style="font-size: 0.9rem;">';
-  detailedHTML += '<thead><tr><th>#</th><th>Name</th><th>Month</th><th>Base + GST</th><th>Interest Accrued</th><th>Interest Settled</th><th>Net Payment</th></tr></thead>';
+
+  // Add PV column if NPV is calculated
+  const showNPV = b.summary.costOfMoneyRate && b.summary.costOfMoneyRate > 0;
+  detailedHTML += '<thead><tr><th>#</th><th>Name</th><th>Month</th><th>Base + GST</th><th>Interest Accrued</th><th>Interest Settled</th><th>Net Payment</th>';
+  if (showNPV) {
+    detailedHTML += '<th>Present Value</th>';
+  }
+  detailedHTML += '</tr></thead>';
   detailedHTML += '<tbody>';
 
   b.installments.forEach(inst => {
@@ -589,14 +586,21 @@ function displayResults() {
       <td>${baseGst}</td>
       <td>${interestAccrued}</td>
       <td>${interestSettled}</td>
-      <td><strong>${formatCurrency(inst.netPayment)}</strong></td>
-    </tr>`;
+      <td><strong>${formatCurrency(inst.netPayment)}</strong></td>`;
+
+    if (showNPV) {
+      detailedHTML += `<td><strong style="color: #16a34a;">${formatCurrency(inst.presentValue)}</strong><br>
+        <small style="color: #64748b;">@${b.summary.costOfMoneyRate}% p.a.</small></td>`;
+    }
+
+    detailedHTML += `</tr>`;
   });
 
   // Add additional charges as separate rows
+  const additionalColspan = showNPV ? 5 : 4;
   detailedHTML += `<tr style="border-top: 3px solid #e2e8f0;">
     <td colspan="3"></td>
-    <td colspan="4" style="text-align: right; padding-top: 15px;"><strong>Additional Charges:</strong></td>
+    <td colspan="${additionalColspan}" style="text-align: right; padding-top: 15px;"><strong>Additional Charges:</strong></td>
   </tr>`;
 
   detailedHTML += `<tr style="background: #f8fafc;">
@@ -606,8 +610,11 @@ function displayResults() {
     <td>${formatCurrency(b.summary.registryAmount)}</td>
     <td>-</td>
     <td>-</td>
-    <td><strong>${formatCurrency(b.summary.registryAmount)}</strong></td>
-  </tr>`;
+    <td><strong>${formatCurrency(b.summary.registryAmount)}</strong></td>`;
+  if (showNPV) {
+    detailedHTML += `<td><strong style="color: #16a34a;">${formatCurrency(b.summary.registryPV)}</strong></td>`;
+  }
+  detailedHTML += `</tr>`;
 
   detailedHTML += `<tr style="background: #f8fafc;">
     <td>-</td>
@@ -616,14 +623,26 @@ function displayResults() {
     <td>${formatCurrency(b.summary.possessionCharges)}</td>
     <td>-</td>
     <td>-</td>
-    <td><strong>${formatCurrency(b.summary.possessionCharges)}</strong></td>
-  </tr>`;
+    <td><strong>${formatCurrency(b.summary.possessionCharges)}</strong></td>`;
+  if (showNPV) {
+    detailedHTML += `<td><strong style="color: #16a34a;">${formatCurrency(b.summary.possessionPV)}</strong></td>`;
+  }
+  detailedHTML += `</tr>`;
 
   // Grand total row
+  const totalColspan = showNPV ? 7 : 6;
   detailedHTML += `<tr style="border-top: 3px solid #2563eb; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); font-size: 1.1rem;">
-    <td colspan="6" style="text-align: right; padding: 15px;"><strong>GRAND TOTAL (All Inclusive):</strong></td>
+    <td colspan="${totalColspan}" style="text-align: right; padding: 15px;"><strong>GRAND TOTAL (All Inclusive):</strong></td>
     <td style="padding: 15px;"><strong style="color: #2563eb; font-size: 1.2rem;">${formatCurrency(b.summary.grandTotal)}</strong></td>
   </tr>`;
+
+  // NPV total row if applicable
+  if (showNPV) {
+    detailedHTML += `<tr style="border-top: 2px solid #16a34a; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); font-size: 1.1rem;">
+      <td colspan="7" style="text-align: right; padding: 15px;"><strong>NET PRESENT VALUE (True Cost Today @ ${b.summary.costOfMoneyRate}%):</strong></td>
+      <td style="padding: 15px;"><strong style="color: #16a34a; font-size: 1.2rem;">${formatCurrency(b.summary.netPresentValue)}</strong></td>
+    </tr>`;
+  }
 
   detailedHTML += '</tbody></table>';
   detailedHTML += '<div style="background: #fffbeb; padding: 15px; margin-top: 15px; border-radius: 4px; border-left: 3px solid #f59e0b;">';
@@ -631,6 +650,9 @@ function displayResults() {
   detailedHTML += '• <strong>Interest Accrued:</strong> Interest earned on cumulative amounts paid from this installment to the next<br>';
   detailedHTML += '• <strong>Interest Settled:</strong> Total accrued interest deducted from this payment<br>';
   detailedHTML += '• <strong>Net Payment:</strong> What you actually pay = Base + GST - Interest Settled<br>';
+  if (showNPV) {
+    detailedHTML += '• <strong>Present Value:</strong> True cost of payment in today\'s money, discounted at ' + b.summary.costOfMoneyRate + '% p.a. (opportunity cost)<br>';
+  }
   detailedHTML += '• <strong>Additional Charges:</strong> Registry and Possession charges added at the end';
   detailedHTML += '</div>';
   detailedHTML += '</div>';
@@ -680,75 +702,151 @@ function downloadPDF() {
     const area = currentResults.inputs.area;
     const pricePerSqFt = currentResults.inputs.pricePerSqFt;
 
-    // Header
-    doc.setFillColor(102, 126, 234);
-    doc.rect(0, 0, 210, 40, 'F');
+    // Premium Dark Header
+    doc.setFillColor(15, 23, 42); // Dark slate
+    doc.rect(0, 0, 210, 45, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
+    doc.setFontSize(22);
     doc.setFont(undefined, 'bold');
-    doc.text('Financial Breakdown', 105, 20, { align: 'center' });
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'normal');
-    doc.text('Advanced Real Estate Calculator', 105, 30, { align: 'center' });
-
-    let yPos = 50;
-
-    // Property Details
-    doc.setTextColor(30, 41, 59);
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text('Property Information', 20, yPos);
-    yPos += 10;
-
+    doc.text('Premium Financial Analysis', 105, 18, { align: 'center' });
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
-    doc.text(`Area: ${formatIndianNumber(area)} sq ft`, 20, yPos);
-    doc.text(`Price/sq ft: ${formatCurrencyPDF(pricePerSqFt)}`, 120, yPos);
-    yPos += 6;
-    doc.text(`BSP: ${formatCurrencyPDF(b.basicSellingPrice)}`, 20, yPos);
-    doc.text(`TCV: ${formatCurrencyPDF(b.totalCostValue)}`, 120, yPos);
-    yPos += 15;
+    doc.setTextColor(203, 213, 225); // Lighter gray
+    doc.text('Real Estate Payment Breakdown & NPV Analysis', 105, 28, { align: 'center' });
 
-    // Grand Total Box
-    doc.setFillColor(102, 126, 234);
-    doc.roundedRect(20, yPos, 170, 25, 3, 3, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(12);
-    doc.text('GRAND TOTAL (All Inclusive)', 25, yPos + 8);
-    doc.setFontSize(18);
-    doc.setFont(undefined, 'bold');
-    doc.text(formatCurrencyPDF(b.summary.grandTotal), 185, yPos + 18, { align: 'right' });
-    yPos += 35;
+    // Date stamp
+    doc.setFontSize(8);
+    const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    doc.text(`Generated: ${dateStr}`, 105, 36, { align: 'center' });
 
-    // Summary
+    let yPos = 55;
+
+    // Property Details - Compact Card
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(15, yPos, 180, 22, 2, 2, 'F');
+
+    doc.setTextColor(71, 85, 105);
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'normal');
+    doc.text('PROPERTY DETAILS', 20, yPos + 6);
+
     doc.setTextColor(30, 41, 59);
-    doc.setFontSize(12);
+    doc.setFontSize(9);
+    doc.text(`${formatIndianNumber(area)} sq ft`, 20, yPos + 12);
+    doc.text(`@ ${formatCurrencyPDF(pricePerSqFt)}/sq ft`, 20, yPos + 17);
+
+    doc.text(`BSP: ${formatCurrencyPDF(b.basicSellingPrice)}`, 80, yPos + 12);
+    doc.text(`TCV: ${formatCurrencyPDF(b.totalCostValue)}`, 80, yPos + 17);
+
+    yPos += 30;
+
+    // Premium Combined Total Box - Dark Theme
+    const showNPVinPDF = b.summary.costOfMoneyRate && b.summary.costOfMoneyRate > 0;
+    const boxHeight = showNPVinPDF ? 45 : 30;
+
+    doc.setFillColor(15, 23, 42); // Dark slate
+    doc.roundedRect(15, yPos, 180, boxHeight, 3, 3, 'F');
+
+    if (showNPVinPDF) {
+      // Two-column layout: Grand Total | NPV
+      doc.setTextColor(203, 213, 225);
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.text('GRAND TOTAL', 25, yPos + 10);
+      doc.text('NET PRESENT VALUE', 110, yPos + 10);
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text(formatCurrencyPDF(b.summary.grandTotal), 25, yPos + 22);
+
+      doc.setTextColor(134, 239, 172); // Green for NPV
+      doc.text(formatCurrencyPDF(b.summary.netPresentValue), 110, yPos + 22);
+
+      // Subtitles
+      doc.setTextColor(203, 213, 225);
+      doc.setFontSize(7);
+      doc.setFont(undefined, 'normal');
+      doc.text(formatCurrencyPDF(b.summary.effectiveCostPerSqFt) + '/sq ft', 25, yPos + 28);
+      doc.text('@ ' + b.summary.costOfMoneyRate + '% p.a.', 110, yPos + 28);
+
+      // Savings badge
+      doc.setFillColor(22, 101, 52, 0.2);
+      doc.setTextColor(134, 239, 172);
+      doc.setFontSize(7);
+      doc.text('Savings: ' + formatCurrencyPDF(b.summary.savingsFromDeferral), 110, yPos + 35);
+
+      // Divider
+      doc.setDrawColor(71, 85, 105);
+      doc.setLineWidth(0.5);
+      doc.line(105, yPos + 8, 105, yPos + 30);
+    } else {
+      // Single Grand Total
+      doc.setTextColor(203, 213, 225);
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text('GRAND TOTAL (All Inclusive)', 25, yPos + 10);
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont(undefined, 'bold');
+      doc.text(formatCurrencyPDF(b.summary.grandTotal), 185, yPos + 20, { align: 'right' });
+
+      doc.setTextColor(203, 213, 225);
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      doc.text('Effective: ' + formatCurrencyPDF(b.summary.effectiveCostPerSqFt) + '/sq ft', 25, yPos + 25);
+    }
+
+    yPos += boxHeight + 10;
+
+    // Summary Section - Clean Modern Style
+    doc.setTextColor(71, 85, 105);
+    doc.setFontSize(10);
     doc.setFont(undefined, 'bold');
-    doc.text('Financial Summary', 20, yPos);
-    yPos += 8;
+    doc.text('FINANCIAL SUMMARY', 20, yPos);
+    yPos += 6;
 
     const summaryData = [
       ['Base Amount', formatCurrencyPDF(b.summary.totalBaseAmount)],
       ['GST (' + currentConfig.rates.gst + '%)', formatCurrencyPDF(b.summary.totalGST)],
-      ['Gross Amount', formatCurrencyPDF(b.summary.totalGrossAmount)],
-      ['Interest Earned (Savings)', '- ' + formatCurrencyPDF(b.summary.savingsFromInterest)],
+      ['Gross Payment', formatCurrencyPDF(b.summary.totalGrossAmount)],
+      ['Interest Earned', '- ' + formatCurrencyPDF(b.summary.savingsFromInterest)],
       ['Net Payment', formatCurrencyPDF(b.summary.totalNetPayment)],
       ['Registry (' + currentConfig.rates.registry + '%)', formatCurrencyPDF(b.summary.registryAmount)],
-      ['Possession Charges', formatCurrencyPDF(b.summary.possessionCharges)]
+      ['Possession', formatCurrencyPDF(b.summary.possessionCharges)]
     ];
 
     doc.autoTable({
       startY: yPos,
-      head: [['Item', 'Amount']],
+      head: [['Component', 'Amount']],
       body: summaryData,
-      theme: 'striped',
-      headStyles: { fillColor: [102, 126, 234], fontSize: 10, fontStyle: 'bold' },
-      bodyStyles: { fontSize: 9 },
-      columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } },
-      margin: { left: 20, right: 20 }
+      theme: 'plain',
+      headStyles: {
+        fillColor: [248, 250, 252],
+        textColor: [71, 85, 105],
+        fontSize: 8,
+        fontStyle: 'bold',
+        lineWidth: 0,
+        lineColor: [226, 232, 240]
+      },
+      bodyStyles: {
+        fontSize: 8,
+        textColor: [30, 41, 59]
+      },
+      columnStyles: {
+        0: { cellWidth: 90 },
+        1: { halign: 'right', fontStyle: 'bold' }
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      margin: { left: 15, right: 15 },
+      styles: {
+        lineColor: [241, 245, 249],
+        lineWidth: 0.1
+      }
     });
 
-    yPos = doc.lastAutoTable.finalY + 15;
+    yPos = doc.lastAutoTable.finalY + 12;
 
     // Installment Schedule
     if (yPos > 230) {
@@ -756,10 +854,13 @@ function downloadPDF() {
       yPos = 20;
     }
 
-    doc.setFontSize(12);
+    doc.setTextColor(71, 85, 105);
+    doc.setFontSize(10);
     doc.setFont(undefined, 'bold');
-    doc.text('Installment Schedule', 20, yPos);
-    yPos += 8;
+    doc.text('INSTALLMENT SCHEDULE', 20, yPos);
+    yPos += 6;
+
+    // showNPVinPDF already declared above
 
     const installmentData = b.installments.map(inst => {
       // Build detailed base+GST string
@@ -781,7 +882,7 @@ function downloadPDF() {
         settledDetail = formatCurrencyPDF(inst.interestSettled) + '\n(Deducted)';
       }
 
-      return [
+      const row = [
         inst.installmentNumber,
         inst.name,
         'Month ' + inst.monthsFromBooking,
@@ -790,57 +891,116 @@ function downloadPDF() {
         settledDetail,
         formatCurrencyPDF(inst.netPayment)
       ];
+
+      if (showNPVinPDF) {
+        row.push(formatCurrencyPDF(inst.presentValue));
+      }
+
+      return row;
     });
 
     // Add additional charges
-    installmentData.push(
-      ['', '', '', '', '', '', ''],
-      ['-', 'Registry Charges', '', formatCurrencyPDF(b.summary.registryAmount), '', '', formatCurrencyPDF(b.summary.registryAmount)],
-      ['-', 'Possession Charges', '', formatCurrencyPDF(b.summary.possessionCharges), '', '', formatCurrencyPDF(b.summary.possessionCharges)],
-      ['', '', '', '', '', 'TOTAL', formatCurrencyPDF(b.summary.grandTotal)]
-    );
+    if (showNPVinPDF) {
+      installmentData.push(
+        ['', '', '', '', '', '', '', ''],
+        ['-', 'Registry Charges', '', formatCurrencyPDF(b.summary.registryAmount), '', '', formatCurrencyPDF(b.summary.registryAmount), formatCurrencyPDF(b.summary.registryPV)],
+        ['-', 'Possession Charges', '', formatCurrencyPDF(b.summary.possessionCharges), '', '', formatCurrencyPDF(b.summary.possessionCharges), formatCurrencyPDF(b.summary.possessionPV)],
+        ['', '', '', '', '', 'TOTAL', formatCurrencyPDF(b.summary.grandTotal), formatCurrencyPDF(b.summary.netPresentValue)]
+      );
+    } else {
+      installmentData.push(
+        ['', '', '', '', '', '', ''],
+        ['-', 'Registry Charges', '', formatCurrencyPDF(b.summary.registryAmount), '', '', formatCurrencyPDF(b.summary.registryAmount)],
+        ['-', 'Possession Charges', '', formatCurrencyPDF(b.summary.possessionCharges), '', '', formatCurrencyPDF(b.summary.possessionCharges)],
+        ['', '', '', '', '', 'TOTAL', formatCurrencyPDF(b.summary.grandTotal)]
+      );
+    }
+
+    const tableHeaders = ['#', 'Name', 'Month', 'Base+GST', 'Interest Accrued', 'Interest Settled', 'Net Payment'];
+    if (showNPVinPDF) {
+      tableHeaders.push('Present Value');
+    }
+
+    const columnStylesConfig = {
+      0: { halign: 'center', cellWidth: 10 },
+      3: { halign: 'right' },
+      4: { halign: 'right' },
+      5: { halign: 'right' },
+      6: { halign: 'right', fontStyle: 'bold' }
+    };
+    if (showNPVinPDF) {
+      columnStylesConfig[7] = { halign: 'right', fontStyle: 'bold' };
+    }
 
     doc.autoTable({
       startY: yPos,
-      head: [['#', 'Name', 'Month', 'Base+GST', 'Interest Accrued', 'Interest Settled', 'Net Payment']],
+      head: [tableHeaders],
       body: installmentData,
-      theme: 'grid',
-      headStyles: { fillColor: [102, 126, 234], fontSize: 8, fontStyle: 'bold' },
-      bodyStyles: { fontSize: 7 },
-      columnStyles: {
-        0: { halign: 'center', cellWidth: 10 },
-        3: { halign: 'right' },
-        4: { halign: 'right' },
-        5: { halign: 'right' },
-        6: { halign: 'right', fontStyle: 'bold' }
+      theme: 'plain',
+      headStyles: {
+        fillColor: [248, 250, 252],
+        textColor: [71, 85, 105],
+        fontSize: 7,
+        fontStyle: 'bold',
+        halign: 'left'
       },
+      bodyStyles: {
+        fontSize: 7,
+        textColor: [30, 41, 59]
+      },
+      columnStyles: columnStylesConfig,
+      alternateRowStyles: { fillColor: [251, 252, 253] },
       margin: { left: 10, right: 10 },
+      styles: {
+        lineColor: [241, 245, 249],
+        lineWidth: 0.1
+      },
       didParseCell: function(data) {
-        // Highlight total row
+        // Highlight Grand Total row
         if (data.row.index === installmentData.length - 1) {
           data.cell.styles.fillColor = [240, 249, 255];
           data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.textColor = [37, 99, 235];
+        }
+        // Highlight NPV row if exists
+        if (showNPVinPDF && data.row.index === installmentData.length - 2 && installmentData[data.row.index][5] === 'TOTAL') {
+          data.cell.styles.fillColor = [240, 253, 244];
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.textColor = [22, 163, 74];
         }
       }
     });
 
-    // Footer
+    // Modern Footer
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      doc.setFontSize(8);
+
+      // Footer line
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.5);
+      doc.line(15, 285, 195, 285);
+
+      doc.setFontSize(7);
       doc.setTextColor(100, 116, 139);
       doc.text(
-        `Generated on ${new Date().toLocaleDateString()} | Page ${i} of ${pageCount}`,
-        105,
-        287,
-        { align: 'center' }
+        `Generated: ${dateStr}`,
+        15,
+        290
       );
-      doc.text('Advanced Real Estate Calculator', 105, 292, { align: 'center' });
+      doc.text(
+        `Page ${i} of ${pageCount}`,
+        195,
+        290,
+        { align: 'right' }
+      );
+      doc.setFontSize(6);
+      doc.text('Premium Real Estate Calculator', 105, 293, { align: 'center' });
     }
 
-    // Save PDF
-    const filename = `property-calculation-${new Date().getTime()}.pdf`;
+    // Save PDF with better filename
+    const properyDesc = `${area}sqft_${Math.round(b.summary.grandTotal/100000)}L`;
+    const filename = `Property_Analysis_${properyDesc}_${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(filename);
 
   } catch (error) {
